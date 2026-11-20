@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CHARACTERS, ILLUSTRATION_URL, LOADING_URL } from './characters.js';
-import { preloadImage } from './preload.js';
+import { preloadImage, decodeImage } from './preload.js';
 import { startGame, guessCharacter, saveScore, fetchScores } from './api.js';
 import LoadingScreen from './components/LoadingScreen.jsx';
 import Board from './components/Board.jsx';
@@ -11,6 +11,9 @@ import TopScores from './components/TopScores.jsx';
 import { formatTime } from './format.js';
 
 const TOTAL = CHARACTERS.length;
+// The download is only part of the wait, so it fills the bar up to here.
+// The last stretch is for decoding the picture and starting the game.
+const DOWNLOAD_SHARE = 0.9;
 
 export default function App() {
   const [phase, setPhase] = useState('loading'); // loading | playing | saving | scores
@@ -35,14 +38,21 @@ export default function App() {
     (async () => {
       try {
         const url = await preloadImage(ILLUSTRATION_URL, (p) => {
-          if (!cancelled) setProgress(p);
+          if (!cancelled) setProgress(p * DOWNLOAD_SHARE);
         });
+        // Wait for the browser to decode it, so the picture shows at once.
+        await decodeImage(url);
+        if (cancelled) return;
         const { gameId: id } = await startGame();
         if (cancelled) return;
+        setProgress(1);
         sessionStorage.setItem('gameId', id);
         setGameId(id);
         setImageUrl(url);
         setStartedAt(Date.now());
+        // A short beat so the full bar is seen instead of a flicker.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        if (cancelled) return;
         setPhase('playing');
         fetchScores().then(setScores).catch(() => {});
       } catch {

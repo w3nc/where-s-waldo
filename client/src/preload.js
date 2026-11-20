@@ -21,3 +21,18 @@ export async function preloadImage(url, onProgress) {
   const blob = new Blob(chunks, { type: res.headers.get('content-type') || 'image/jpeg' });
   return URL.createObjectURL(blob);
 }
+
+// Waits until the browser has decoded the picture, so it can be painted
+// without a pause. Resolves even if the browser has no decode() support.
+export function decodeImage(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = url;
+    if (typeof img.decode === 'function') {
+      img.decode().then(resolve, resolve);
+      return;
+    }
+    img.onload = resolve;
+    img.onerror = resolve;
+  });
+}
