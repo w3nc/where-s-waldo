@@ -14,7 +14,13 @@ export async function preloadImage(url, onProgress) {
     if (done) break;
     chunks.push(value);
     received += value.length;
-    if (total) onProgress(Math.min(1, received / total));
+    if (total) {
+      onProgress(Math.min(1, received / total));
+    } else {
+      // No length to divide by (some servers stream without one), so ease
+      // toward 1 as bytes arrive and never claim the whole download early.
+      onProgress(Math.min(0.98, received / (received + 300 * 1024)));
+    }
   }
 
   onProgress(1);

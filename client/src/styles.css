@@ -79,9 +79,29 @@ button { font: inherit; cursor: pointer; }
 }
 .stripe-fill {
   height: 100%;
+  position: relative;
+  overflow: hidden;
   background: var(--brass);
   opacity: 0.85;
   transition: width 0.2s linear;
+}
+/* Brass stripes that slide to the right, so the bar always looks alive.
+   The motion comes from the picture inside the fill, not from the width. */
+.stripe-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(22, 34, 42, 0.28) 0 8px,
+    transparent 8px 18px
+  );
+  animation: stripe-slide 0.9s linear infinite;
+  will-change: transform;
+}
+@keyframes stripe-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(18px); }
 }
 
 /* ---------- Header ---------- */
@@ -412,5 +432,8 @@ button { font: inherit; cursor: pointer; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Keep the stripes, only drop the quick width glide; the bar still steps
+     forward as bytes arrive. */
   .stripe-fill { transition: none; }
+  .stripe-fill::after { animation-duration: 3s; }
 }
